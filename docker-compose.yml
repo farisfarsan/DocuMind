@@ -1,0 +1,94 @@
+
+services:
+
+  # ── PostgreSQL Database ───────────────────────────────────────────────────
+  postgres:
+    image: pgvector/pgvector:pg16      # PostgreSQL with pgvector built in ✅
+    container_name: documind_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: documind
+    ports:
+      - "5432:5432"                    # your machine:container
+    volumes:
+      - postgres_data:/var/lib/postgresql/data   # data persists ✅
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis Cache ───────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine              # lightweight Redis ✅
+    container_name: documind_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data               # data persists ✅
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── RabbitMQ Message Queue ────────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3-management       # management UI included ✅
+    container_name: documind_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"                    # RabbitMQ main port
+      - "15672:15672"                  # management UI port
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  # ── FastAPI App ───────────────────────────────────────────────────────────
+  api:
+    build: .                           # build from your Dockerfile
+    container_name: documind_api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env                           # reads your .env file ✅
+    volumes:
+      - ./uploads:/app/uploads         # uploads folder persists ✅
+    depends_on:
+      postgres:
+        condition: service_healthy     # wait for postgres to be ready
+      redis:
+        condition: service_healthy     # wait for redis to be ready
+      rabbitmq:
+        condition: service_healthy     # wait for rabbitmq to be ready
+
+  # ── Celery Worker ─────────────────────────────────────────────────────────
+  worker:
+    build: .                           # same Dockerfile as api
+    container_name: documind_worker
+    command: celery -A app.workers.celery_app worker --loglevel=info
+    env_file:
+      - .env
+    volumes:
+      - ./uploads:/app/uploads         # shares uploads folder with api ✅
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+
+# ── Volumes ───────────────────────────────────────────────────────────────────
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
