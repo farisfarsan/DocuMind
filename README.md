@@ -7,7 +7,7 @@
   A production-grade RAG backend built with distributed systems, async workers, and semantic search.
 </p>
 
-Loom Video:https://www.loom.com/share/29bfce3333574325ac6de4383cb31569
+Working Video:[https://www.loom.com/share/29bfce3333574325ac6de4383cb31569](https://www.loom.com/share/951e5621f4f343c2af4630955d3f0335)
 
 ---
 
