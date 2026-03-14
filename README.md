@@ -12,12 +12,7 @@
   <img src="https://img.shields.io/badge/HuggingFace-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black" />
 </p>
 
-<p align="center">
-  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" />
-  <img src="https://img.shields.io/badge/Tests-54%20passing-brightgreen?style=flat-square" />
-  <img src="https://img.shields.io/badge/CI-GitHub%20Actions-blue?style=flat-square&logo=githubactions&logoColor=white" />
-  <img src="https://img.shields.io/badge/Coverage-Codecov-F01F7A?style=flat-square&logo=codecov&logoColor=white" />
-</p>
+
 
 <p align="center">
   <b>Upload a PDF. Ask anything. Get AI-powered answers with source references.</b><br/>
