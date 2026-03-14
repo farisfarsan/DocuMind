@@ -1,13 +1,30 @@
 # DocuMind 🧠
 ### AI Document Intelligence API
 
+<p align="center">
+  <img src="https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi" />
+  <img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white" />
+  <img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" />
+  <img src="https://img.shields.io/badge/RabbitMQ-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white" />
+  <img src="https://img.shields.io/badge/Celery-37814A?style=for-the-badge&logo=celery&logoColor=white" />
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
+  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" />
+  <img src="https://img.shields.io/badge/HuggingFace-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" />
+  <img src="https://img.shields.io/badge/Tests-54%20passing-brightgreen?style=flat-square" />
+  <img src="https://img.shields.io/badge/CI-GitHub%20Actions-blue?style=flat-square&logo=githubactions&logoColor=white" />
+  <img src="https://img.shields.io/badge/Coverage-Codecov-F01F7A?style=flat-square&logo=codecov&logoColor=white" />
+</p>
 
 <p align="center">
   <b>Upload a PDF. Ask anything. Get AI-powered answers with source references.</b><br/>
   A production-grade RAG backend built with distributed systems, async workers, and semantic search.
 </p>
 
-Working Video:[https://www.loom.com/share/29bfce3333574325ac6de4383cb31569](https://www.loom.com/share/951e5621f4f343c2af4630955d3f0335)
+Working Video: [Watch Demo](https://www.loom.com/share/951e5621f4f343c2af4630955d3f0335)
 
 ---
 
@@ -63,7 +80,7 @@ Companies like Notion AI, ChatPDF, and Adobe Acrobat AI are built on this exact 
 **Upload (non-blocking):**
 ```
 POST /documents/upload
-  → Save file to disk
+  → Save file to disk (/app/uploads)
   → Create DB record (status: pending)
   → Fire Celery task via RabbitMQ  ← returns doc_id immediately
         (background worker)
@@ -104,8 +121,14 @@ POST /query/
 ## Quick Start
 
 ### Prerequisites
+
+<p>
+  <img src="https://img.shields.io/badge/Docker-required-2496ED?style=flat-square&logo=docker&logoColor=white" />
+  <img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white" />
+  <img src="https://img.shields.io/badge/Groq-API%20Key%20Required-F55036?style=flat-square" />
+</p>
+
 - [Docker + Docker Compose](https://docs.docker.com/get-docker/)
-- Python 3.11+
 - Groq API key — free at [console.groq.com](https://console.groq.com)
 
 ### 1. Clone
@@ -115,24 +138,40 @@ cd DocuMind
 ```
 
 ### 2. Configure
+Create your `.env` file manually:
 ```bash
-cp .env.example .env
-```
-Open `.env` and set:
-```env
-GROQ_API_KEY=your_groq_api_key_here
-SECRET_KEY=any-random-secret-string
+nano .env
 ```
 
-### 3. Start all 5 services
+Paste the following and fill in your values:
+```env
+DATABASE_URL=postgresql://postgres:password@documind_postgres:5432/documind
+SECRET_KEY=any-random-secret-string
+GROQ_API_KEY=your_groq_api_key_here
+REDIS_URL=redis://documind_redis:6379/0
+RABBITMQ_URL=amqp://guest:guest@documind_rabbitmq:5672//
+UPLOAD_DIR=/app/uploads
+MAX_FILE_SIZE_MB=20
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+```
+
+> ⚠️ **Important:** Use container names (`documind_postgres`, `documind_redis`, `documind_rabbitmq`) — NOT `localhost` — for all service URLs inside Docker.
+
+### 3. Create uploads directory
+```bash
+mkdir -p uploads
+```
+
+### 4. Start all 5 services
 ```bash
 docker compose up -d
 ```
 
-### 4. Verify
+### 5. Verify
 ```bash
 curl http://localhost:8000/
-# {"status": "ok", "message": "DocuMind API is running"}
+# {"status": "ok", "message": "DocuMind API is running 🚀"}
 ```
 
 Open **http://localhost:8000/docs** for the interactive Swagger UI.
@@ -308,6 +347,7 @@ documind/
 │   ├── test_auth.py
 │   ├── test_documents.py
 │   └── test_query.py
+├── uploads/                     # shared volume for uploaded PDFs
 ├── docker-compose.yml           # 5 services
 ├── Dockerfile
 ├── requirements.txt
@@ -320,26 +360,41 @@ documind/
 
 ## Environment Variables
 
-| Variable | Description |
-|---|---|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `SECRET_KEY` | JWT signing secret |
-| `GROQ_API_KEY` | Groq API key (free at console.groq.com) |
-| `REDIS_URL` | Redis connection string |
-| `RABBITMQ_URL` | RabbitMQ connection string |
-| `UPLOAD_DIR` | File storage path |
-| `MAX_FILE_SIZE_MB` | Max upload size (default: 20) |
+| Variable | Description | Example |
+|---|---|---|
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://postgres:password@documind_postgres:5432/documind` |
+| `SECRET_KEY` | JWT signing secret | any random string |
+| `GROQ_API_KEY` | Groq API key (free at console.groq.com) | `gsk_...` |
+| `REDIS_URL` | Redis connection string | `redis://documind_redis:6379/0` |
+| `RABBITMQ_URL` | RabbitMQ connection string | `amqp://guest:guest@documind_rabbitmq:5672//` |
+| `UPLOAD_DIR` | File storage path inside container | `/app/uploads` |
+| `MAX_FILE_SIZE_MB` | Max upload size (default: 20) | `20` |
+
+> ⚠️ Always use **container names** (not `localhost`) for service URLs when running inside Docker.
 
 ---
 
+## Common Issues & Fixes
 
+| Problem | Cause | Fix |
+|---|---|---|
+| `Connection refused` on port 8000 | API container crashed | Run `docker compose logs api` |
+| `Connection refused` to postgres/redis/rabbitmq | Using `localhost` instead of container name | Use container names in `.env` |
+| `FileNotFoundError` for uploaded PDF | `UPLOAD_DIR` mismatch between API and worker | Set `UPLOAD_DIR=/app/uploads` in `.env` |
+| Document stuck in `processing` | Worker can't find the file | Ensure `uploads/` folder exists on host |
+
+---
 
 ## Built By
 
 **Faris Farsan M** — Backend Engineer
 
-
+<p>
+  <a href="https://github.com/farisfarsan">
+    <img src="https://img.shields.io/badge/GitHub-farisfarsan-181717?style=for-the-badge&logo=github" />
+  </a>
+</p>
 
 ---
 
-MIT License
+<p align="center">MIT License</p>
